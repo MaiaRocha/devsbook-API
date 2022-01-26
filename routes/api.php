@@ -18,3 +18,5 @@ Route::get('/ping', function(){
     return ['pong' =>true];
 });
 
+
+Route::post('/user', 'AuthController@create');
