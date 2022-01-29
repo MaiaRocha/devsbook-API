@@ -11,7 +11,6 @@ use App\UserRelation;
 use App\User;
 use Image;
 
-
 class FeedController extends Controller
 {
     private $loggedUser;
@@ -68,7 +67,6 @@ class FeedController extends Controller
                     $array['error'] = 'Tipo de postagem inexistente.';
                     return $array;
                 break;
-
             }
 
             if($body) {
@@ -84,8 +82,6 @@ class FeedController extends Controller
             $array['error'] = 'Dados não enviados.';
             return $array;
         }
-
-
         return $array;
     }
     
@@ -117,7 +113,6 @@ class FeedController extends Controller
         //3. Preencher as inf. adicionais
         $posts = $this->_postListToObject($postList, $this->loggedUser['id']);
 
-
         $array['posts'] = $posts;
         $array['pageCount'] = $pageCount;
         $array['currentPage'] = $page;
@@ -131,7 +126,6 @@ class FeedController extends Controller
         if($id == false) {
             $id = $this->loggedUser['id'];
         }
-
         $page = intval($request->input('page'));
         $perPage = 2;
 
@@ -147,7 +141,6 @@ class FeedController extends Controller
 
         //Preencher as informações adicionais
         $posts = $this->_postListToObject($postList, $this->loggedUser['id']);
-
 
         $array['posts'] = $posts;
         $array['pageCount'] = $pageCount;
@@ -191,7 +184,43 @@ class FeedController extends Controller
             }
             $postList[$postKey]['comments'] = $comments;
         }
-
         return $postList;
+    }
+
+    public function userPhotos(Request $request, $id = false) {
+        $array = ['error' => ''];
+
+        if($id == false) {
+            $id = $this->loggedUser['id'];
+        }
+        $page = intval($request->input('page'));
+        $perPage = 2;
+
+        //Pegar as fotos do usuario ordenado pela data
+        $postList = Post::where('id_user', $id)
+        ->where('type', 'photo')
+        ->orderBy('created_at', 'desc')
+        ->offset($page * $perPage)
+        ->limit($perPage)
+        ->get();
+
+        $total = Post::where('id_user', $id)
+        ->where('type', 'photo')
+        ->count();
+        $pageCount = ceil($total / $perPage);
+
+        //Preencher as informações adicionais
+        $posts = $this->_postListToObject($postList, $this->loggedUser['id']);
+
+        foreach($posts as $pkey => $post) {
+            $posts[$pkey]['body'] = url('media/uploads/'.$posts[$pkey]['body']);
+        }
+
+        $array['posts'] = $posts;
+        $array['pageCount'] = $pageCount;
+        $array['currentPage'] = $page;
+
+        return $array;
+
     }
 }

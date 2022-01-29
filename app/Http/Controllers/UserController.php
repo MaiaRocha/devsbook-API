@@ -33,7 +33,6 @@ class UserController extends Controller
         if($name) {
             $user->name = $name;
         }
-
         //Email
         if($email) {
             if($email != $user->email) {
@@ -46,7 +45,6 @@ class UserController extends Controller
                 }
             }
         }
-
         //Birthdate
         if($birthdate) {
             if(strtotime($birthdate) === false) {
@@ -59,12 +57,10 @@ class UserController extends Controller
         if($city) {
             $user->city = $city;
         }
-
         //Work
         if($work) {
             $user->work = $work;
         }
-
         //Password
         if($password && $password_confirm) {
             if($password === $password_confirm) {
@@ -75,7 +71,6 @@ class UserController extends Controller
                 return $array;
             }
         }
-
        $user->save();
 
         return $array;
@@ -108,11 +103,7 @@ class UserController extends Controller
         } else {
             $array['error'] = 'Arquivo não enviado!';
             return $array;
-
         }
-
-
-
         return $array;
     }
 
@@ -186,6 +177,77 @@ class UserController extends Controller
         $info['isFollowing'] = ($hasRelation > 0) ? true : false;
        
         $array['data'] = $info;
+
+        return $array;
+    }
+
+    public function follow($id) {
+        $array = ['error' => ''];
+        if($id == $this->loggedUser['id']) {
+            $array['error'] ='Voce nao pode seguir a si mesmo.';
+            return $array;
+        }
+
+        $userExists = User::find($id);
+        if($userExists) {
+
+            $relation = UserRelation::where('user_from', $this->loggedUser['id'])
+            ->where('user_to', $id)
+            ->first();
+
+            if($relation) {
+                //parar de seguir
+                $relation->delete();
+            } else {
+                //seguir
+                $newRelation = new UserRelation();
+                $newRelation->user_from = $this->loggedUser['id'];
+                $newRelation->user_to = $id;
+                $newRelation->save();
+
+            }
+        } else {
+            $array['error'] = 'Usuario inexistente!';
+            return $array;
+        }
+        return $array;
+    }
+
+    public function followers($id) {
+        $array = ['error' => ''];
+
+        $userExists = User::find($id);
+        if($userExists) {
+
+            $followers = UserRelation::where('user_to', $id)->get();
+            $following = UserRelation::where('user_from', $id)->get();
+
+            $array['followers'] = [];
+            $array['following'] = [];
+
+            foreach($followers as $item) {
+                $user = User::find($item['user_from']);
+                $array['following'][] = [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'avatar' => url('media/avatars/'.$user['avatar'])
+                ];
+            }
+
+            foreach($following as $item) {
+                $user = User::find($item['user_from']);
+                $array['followers'][] = [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'avatar' => url('media/avatars/'.$user['avatar'])
+                ];
+            }
+
+        } else {
+            $array['error'] = 'Usuario inexistente!';
+            return $array;
+        }
+
 
         return $array;
     }
